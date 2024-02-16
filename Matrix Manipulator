@@ -1,0 +1,315 @@
+#include <iostream>
+#include <vector>
+#include <stdexcept>
+
+class Matrix {
+private:
+    std::vector<std::vector<double>> data;
+    int rows, cols;
+
+public:
+    Matrix(int rows, int cols) : rows(rows), cols(cols) {
+        data.resize(rows, std::vector<double>(cols, 0.0));
+    }
+
+    // ... other matrix operations (e.g., addition, subtraction, multiplication) ...
+
+    // Function to calculate the matrix inverse using Gauss-Jordan elimination
+    Matrix inverse() const {
+        if (rows != cols) {
+            throw std::runtime_error("Matrix must be square to find the inverse.");
+        }
+
+        // Create an augmented matrix [A | I] where 'I' is the identity matrix
+        Matrix augmented(rows, 2 * cols);
+
+        // Initialize the augmented matrix with 'A' on the left and 'I' on the right
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                augmented.data[i][j] = data[i][j];
+                if (i == j) {
+                    augmented.data[i][j + cols] = 1.0;
+                }
+            }
+        }
+
+        // Apply Gauss-Jordan elimination to transform the left side into the identity matrix
+        // The result will be [I | A^-1]
+        for (int i = 0; i < rows; i++) {
+            // Find the pivot element
+            double pivot = augmented.data[i][i];
+            if (pivot == 0.0) {
+                throw std::runtime_error("Matrix is not invertible.");
+            }
+
+            // Scale the row to make the pivot element 1
+            for (int j = 0; j < 2 * cols; j++) {
+                augmented.data[i][j] /= pivot;
+            }
+
+            // Eliminate other rows to make elements above and below the pivot zero
+            for (int k = 0; k < rows; k++) {
+                if (k != i) {
+                    double factor = augmented.data[k][i];
+                    for (int j = 0; j < 2 * cols; j++) {
+                        augmented.data[k][j] -= factor * augmented.data[i][j];
+                    }
+                }
+            }
+        }
+
+        // Extract the inverse from the right side of the augmented matrix
+        Matrix result(rows, cols);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result.data[i][j] = augmented.data[i][j + cols];
+            }
+        }
+
+        return result;
+    }
+
+    // ... other member functions (e.g., printing the matrix, setting elements) ...
+
+    // Overload the + operator for matrix addition
+    Matrix operator+(const Matrix& other) const {
+        if (rows != other.rows || cols != other.cols) {
+            throw std::runtime_error("Matrix dimensions must match for addition.");
+        }
+
+        Matrix result(rows, cols);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result.data[i][j] = data[i][j] + other.data[i][j];
+            }
+        }
+        return result;
+    }
+
+    // Overload the - operator for matrix subtraction
+    Matrix operator-(const Matrix& other) const {
+         if (rows != other.rows || cols != other.cols) {
+            throw std::runtime_error("Matrix dimensions must match for subtraction.");
+        }
+
+        Matrix result(rows, cols);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result.data[i][j] = data[i][j] - other.data[i][j];
+            }
+        }
+        return result;
+    }
+
+    // Overload the * operator for scalar multiplication
+    Matrix operator*(double scalar) const {
+        Matrix result(rows, cols);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result.data[i][j] = data[i][j] * scalar;
+            }
+        }
+        return result;
+    }
+
+    // Overload the * operator for matrix multiplication
+    Matrix operator*(const Matrix& other) const {
+        if (cols != other.rows) {
+            throw std::runtime_error("Number of columns in the first matrix must match the number of rows in the second matrix.");
+        }
+
+        Matrix result(rows, other.cols);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < other.cols; j++) {
+                for (int k = 0; k < cols; k++) {
+                    result.data[i][j] += data[i][k] * other.data[k][j];
+                }
+            }
+        }
+        return result;
+    }
+
+    // Overload the / operator for matrix division (element-wise)
+    Matrix operator/(double scalar) const {
+        if (scalar == 0) {
+            throw std::runtime_error("Division by zero is not allowed.");
+        }
+
+        Matrix result(rows, cols);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result.data[i][j] = data[i][j] / scalar;
+            }
+        }
+        return result;
+    }
+
+    // Overload the unary - operator for matrix negation
+    Matrix operator-() const {
+        Matrix result(rows, cols);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result.data[i][j] = -data[i][j];
+            }
+        }
+        return result;
+    }
+
+    // Transpose the matrix
+    Matrix transpose() const {
+        Matrix result(cols, rows);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result.data[j][i] = data[i][j];
+            }
+        }
+        return result;
+    }
+
+    // Print the matrix
+    void print() const {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                std::cout << data[i][j] << "\t";
+            }
+            std::cout << std::endl;
+        }
+    }
+    void setElement(int row, int col, double value) {
+        if (row >= 0 && row < rows && col >= 0 && col < cols) {
+            data[row][col] = value;
+        } else {
+            throw std::runtime_error("Invalid row or column index.");
+        }
+    }
+};
+
+int main() {
+    int rows, cols;
+    std::cout << "Enter the number of rows for the matrices: ";
+    std::cin >> rows;
+    std::cout << "Enter the number of columns for the matrices: ";
+    std::cin >> cols;
+
+    Matrix A(rows, cols);
+    Matrix B(rows, cols);
+    Matrix C(rows, cols); // Define the result matrix
+
+    std::cout << "Enter the elements of matrix A:" << std::endl;
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            double element;
+            std::cout << "A[" << i << "][" << j << "]: ";
+            std::cin >> element;
+            A.setElement(i, j, element);
+        }
+    }
+
+    std::cout << "Enter the elements of matrix B:" << std::endl;
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            double element;
+            std::cout << "B[" << i << "][" << j << "]: ";
+            std::cin >> element;
+            B.setElement(i, j, element);
+        }
+    }
+
+    int choice;
+
+    do {
+        std::cout << "\nMatrix Operations Menu:\n";
+        std::cout << "1. Addition\n";
+        std::cout << "2. Subtraction\n";
+        std::cout << "3. Scalar Multiplication\n";
+        std::cout << "4. Matrix Multiplication\n";
+        std::cout << "5. Transpose A\n";
+        std::cout << "6. Transpose B\n";
+        std::cout << "7. Inverse of A\n";
+        std::cout << "8. Inverse of B\n";
+        std::cout << "9. Division of A\n";
+        std::cout << "10. Division of B\n";
+        std::cout << "11. Exit\n";
+        std::cout << "Enter your choice: ";
+        std::cin >> choice;
+
+        switch (choice) {
+            case 1:
+                C = A + B;
+                std::cout << "Result of Addition:\n";
+                C.print();
+                break;
+            case 2:
+                C = A - B;
+                std::cout << "Result of Subtraction:\n";
+                C.print();
+                break;
+            case 3:
+                double scalar;
+                std::cout << "Enter the scalar value: ";
+                std::cin >> scalar;
+                C = A * scalar;
+                std::cout << "Result of Scalar Multiplication:\n";
+                C.print();
+                break;
+            case 4:
+                C = A * B;
+                std::cout << "Result of Matrix Multiplication:\n";
+                C.print();
+                break;
+            case 5:
+                C = A.transpose();
+                std::cout << "Transpose of A:\n";
+                C.print();
+                break;
+            case 6:
+                C = B.transpose();
+                std::cout << "Transpose of B:\n";
+                C.print();
+                break;
+            case 7:
+                // Calculate the inverse of A
+                try {
+                    C = A.inverse();
+                    std::cout << "Inverse of A:\n";
+                    C.print();
+                } catch (const std::exception& e) {
+                    std::cerr << "Error: " << e.what() << std::endl;
+                }
+                break;
+            case 8:
+                // Calculate the inverse of B
+                try {
+                    C = B.inverse();
+                    std::cout << "Inverse of B:\n";
+                    C.print();
+                } catch (const std::exception& e) {
+                    std::cerr << "Error: " << e.what() << std::endl;
+                }
+                break;
+            case 9:
+                double divisorA;
+                std::cout << "Enter the divisor for A: ";
+                std::cin >> divisorA;
+                C = A / divisorA;
+                std::cout << "Result of Division for A:\n";
+                C.print();
+                break;
+            case 10:
+                double divisorB;
+                std::cout << "Enter the divisor for B: ";
+                std::cin >> divisorB;
+                C = B / divisorB;
+                std::cout << "Result of Division for B:\n";
+                C.print();
+                break;
+            case 11:
+                std::cout << "Exiting the program.\n";
+                break;
+            default:
+                std::cout << "Invalid choice. Please enter a valid option.\n";
+        }
+    } while (choice != 11);
+
+    return 0;
+}
